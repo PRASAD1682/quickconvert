@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickConvert — PDF to Image &amp; Image to PDF Converter</title>
+<meta name="description" content="Convert PDF pages to JPG/PNG/WebP images, or combine images into a PDF. Fast, free, and simple.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0F17; --surface:#121722; --surface-2:#171E2B; --surface-3:#1E2635;
+    --border:#242D40; --border-soft:#1B2233;
+    --accent:#E8A33D; --accent-hover:#F2B458; --accent-ink:#1A1206;
+    --text-1:#EEF1F6; --text-2:#9AA6BC; --text-3:#66718A;
+    --danger:#E5675A; --success:#5FBE8E;
+    --r-sm:6px; --r-md:10px; --r-lg:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+  header{padding:20px 20px 16px;text-align:center;border-bottom:1px solid var(--border-soft);}
+  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.01em;}
+  header p{margin:6px 0 0;font-size:13px;color:var(--text-2);}
+  main{max-width:640px;margin:0 auto;padding:24px 18px 60px;}
+
+  .tabs{display:flex;gap:6px;background:var(--surface-2);border-radius:var(--r-md);padding:4px;margin-bottom:20px;}
+  .tab{flex:1;text-align:center;padding:10px;border-radius:var(--r-sm);border:none;background:none;color:var(--text-2);font-weight:600;font-size:13.5px;cursor:pointer;}
+  .tab.active{background:var(--accent);color:var(--accent-ink);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .dropzone{border:2px dashed var(--border);border-radius:var(--r-lg);padding:36px 20px;text-align:center;
+    cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s;}
+  .dropzone.drag{border-color:var(--accent);background:var(--surface-2);}
+  .dropzone input{display:none;}
+  .dropzone .dz-icon{width:40px;height:40px;margin:0 auto 12px;color:var(--text-3);}
+  .dropzone .dz-icon svg{width:100%;height:100%;}
+  .dropzone .dz-title{font-size:14px;font-weight:600;}
+  .dropzone .dz-sub{font-size:12.5px;color:var(--text-3);margin-top:4px;}
+
+  .file-list{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+  .file-chip{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r-sm);padding:9px 12px;font-size:12.5px;}
+  .file-chip .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file-chip .sz{color:var(--text-3);font-size:11px;}
+  .file-chip .rm{background:none;border:none;color:var(--text-3);cursor:pointer;font-size:15px;padding:2px 4px;}
+  .file-chip .rm:hover{color:var(--danger);}
+
+  .options{margin-top:18px;display:flex;flex-direction:column;gap:14px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:12px;font-weight:600;color:var(--text-2);}
+  .field select,.field input[type=text]{height:40px;padding:0 12px;border-radius:var(--r-sm);
+    border:1px solid var(--border);background:var(--surface);color:var(--text-1);font-size:13.5px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .slider-row{display:flex;align-items:center;gap:10px;}
+  .slider-row input[type=range]{flex:1;accent-color:var(--accent);}
+  .slider-row span{font-size:12px;color:var(--text-3);width:52px;text-align:right;}
+  .hint{font-size:11.5px;color:var(--text-3);}
+
+  .btn-primary{width:100%;height:46px;border-radius:var(--r-md);border:none;background:var(--accent);
+    color:var(--accent-ink);font-weight:700;font-size:14px;cursor:pointer;margin-top:20px;}
+  .btn-primary:hover{background:var(--accent-hover);}
+  .btn-primary:disabled{background:var(--surface-3);color:var(--text-3);cursor:not-allowed;}
+
+  .progress-wrap{display:none;margin-top:16px;}
+  .progress-wrap.show{display:block;}
+  .progress-label{font-size:12px;color:var(--text-2);margin-bottom:6px;display:flex;justify-content:space-between;}
+  .progress-track{height:8px;border-radius:5px;background:var(--surface-3);overflow:hidden;}
+  .progress-fill{height:100%;width:0%;background:var(--accent);border-radius:5px;transition:width .15s ease;}
+
+  .result{display:none;margin-top:18px;background:var(--surface);border:1px solid var(--success);
+    border-radius:var(--r-lg);padding:16px;text-align:center;}
+  .result.show{display:block;}
+  .result .icon{width:34px;height:34px;margin:0 auto 8px;color:var(--success);}
+  .result .icon svg{width:100%;height:100%;}
+  .result .msg{font-size:13.5px;font-weight:600;}
+  .result a.dl-btn{display:inline-flex;align-items:center;gap:8px;margin-top:12px;height:42px;padding:0 20px;
+    border-radius:var(--r-sm);background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:13.5px;
+    text-decoration:none;}
+  .result a.dl-btn:hover{background:var(--accent-hover);}
+
+  .error-box{display:none;margin-top:14px;background:rgba(229,103,90,.08);border:1px solid rgba(229,103,90,.35);
+    border-radius:var(--r-md);padding:12px 14px;font-size:12.5px;color:#F0958A;}
+  .error-box.show{display:block;}
+
+  .ad-slot{margin-top:26px;padding:16px;border:1px dashed var(--border);border-radius:var(--r-md);
+    background:var(--surface);text-align:center;color:var(--text-3);font-size:11px;letter-spacing:.04em;
+    text-transform:uppercase;min-height:90px;display:flex;align-items:center;justify-content:center;}
+
+  footer{text-align:center;padding:20px;font-size:11.5px;color:var(--text-3);border-top:1px solid var(--border-soft);}
+  footer a{color:var(--text-2);}
+</style>
+</head>
+<body>
+<header>
+  <h1>QuickConvert</h1>
+  <p>PDF ↔ Image conversion — fast and simple.</p>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" data-tab="pdf2img">PDF → Images</button>
+    <button class="tab" data-tab="img2pdf">Images → PDF</button>
+  </div>
+
+  <!-- PDF -> IMAGES -->
+  <section class="panel active" id="panel-pdf2img">
+    <div class="dropzone" id="dz1">
+      <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5V8h4"/><path d="M9 15l2.5-3 2 2.3 2-2.6 2.5 3.3"/></svg></div>
+      <div class="dz-title">Drop a PDF here, or tap to browse</div>
+      <div class="dz-sub">Max 60MB</div>
+      <input type="file" id="fileInput1" accept="application/pdf">
+    </div>
+    <div class="file-list" id="fileList1"></div>
+
+    <div class="options">
+      <div class="row2">
+        <div class="field">
+          <label for="format1">Output format</label>
+          <select id="format1">
+            <option value="png" selected>PNG</option>
+            <option value="jpg">JPG</option>
+            <option value="webp">WebP</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pages1">Pages</label>
+          <input type="text" id="pages1" value="all" placeholder="all or 1,3,5-7">
+        </div>
+      </div>
+      <div class="field">
+        <label>Resolution (DPI)</label>
+        <div class="slider-row">
+          <input type="range" id="dpi1" min="72" max="600" value="150" step="1">
+          <span id="dpi1Label">150</span>
+        </div>
+      </div>
+      <div class="field" id="qualityField1">
+        <label>Quality</label>
+        <div class="slider-row">
+          <input type="range" id="quality1" min="30" max="100" value="85" step="1">
+          <span id="quality1Label">85%</span>
+        </div>
+      </div>
+      <div class="hint">Multiple pages download as a ZIP; a single page downloads directly.</div>
+    </div>
+
+    <button class="btn-primary" id="btnConvert1" disabled>Convert to Images</button>
+    <div class="progress-wrap" id="progress1">
+      <div class="progress-label"><span>Converting…</span><span id="progress1Pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progress1Fill"></div></div>
+    </div>
+    <div class="error-box" id="error1"></div>
+    <div class="result" id="result1">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9 17 19.5 6"/></svg></div>
+      <div class="msg">Conversion complete</div>
+      <a class="dl-btn" id="download1" download>Download</a>
+    </div>
+  </section>
+
+  <!-- IMAGES -> PDF -->
+  <section class="panel" id="panel-img2pdf">
+    <div class="dropzone" id="dz2">
+      <div class="dz-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="1.6"/><circle cx="9" cy="10" r="1.7"/><path d="M4 17.5 9 12.5l3 3 3.5-4.2L20 15"/></svg></div>
+      <div class="dz-title">Drop images here, or tap to browse</div>
+      <div class="dz-sub">JPG, PNG, WebP — multiple files supported</div>
+      <input type="file" id="fileInput2" accept="image/*" multiple>
+    </div>
+    <div class="file-list" id="fileList2"></div>
+
+    <div class="options">
+      <div class="field">
+        <label for="pageSize2">Page size</label>
+        <select id="pageSize2">
+          <option value="Fit" selected>Fit to image (no borders)</option>
+          <option value="A4">A4</option>
+          <option value="Letter">Letter</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btnConvert2" disabled>Convert to PDF</button>
+    <div class="progress-wrap" id="progress2">
+      <div class="progress-label"><span>Converting…</span><span id="progress2Pct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progress2Fill"></div></div>
+    </div>
+    <div class="error-box" id="error2"></div>
+    <div class="result" id="result2">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9 17 19.5 6"/></svg></div>
+      <div class="msg">Your PDF is ready</div>
+      <a class="dl-btn" id="download2" download>Download</a>
+    </div>
+  </section>
+
+  <!-- Ad slot: replace with your AdSense <ins> tag once your site is approved -->
+  <div class="ad-slot" id="adSlotBottom">Ad space</div>
+</main>
+
+<footer>
+  QuickConvert — files are processed on our server and automatically deleted within 1 hour. <a href="/privacy-policy.html">Privacy Policy</a>
+</footer>
+
+<script>
+// ---------- Tab switching ----------
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+function formatBytes(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function setupDropzone(dzId, inputId, onFiles, multiple){
+  const dz = document.getElementById(dzId);
+  const input = document.getElementById(inputId);
+  dz.addEventListener('click', ()=> input.click());
+  input.addEventListener('change', ()=> onFiles(multiple ? Array.from(input.files) : [input.files[0]].filter(Boolean)));
+  ['dragenter','dragover'].forEach(ev=> dz.addEventListener(ev, (e)=>{ e.preventDefault(); dz.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev=> dz.addEventListener(ev, (e)=>{ e.preventDefault(); dz.classList.remove('drag'); }));
+  dz.addEventListener('drop', (e)=>{
+    const files = Array.from(e.dataTransfer.files);
+    onFiles(multiple ? files : [files[0]].filter(Boolean));
+  });
+}
+
+function renderFileList(container, files, onRemove){
+  container.innerHTML = '';
+  files.forEach((file, idx)=>{
+    const chip = document.createElement('div');
+    chip.className = 'file-chip';
+    chip.innerHTML = `<span class="nm">${file.name}</span><span class="sz">${formatBytes(file.size)}</span><button class="rm" title="Remove">✕</button>`;
+    chip.querySelector('.rm').addEventListener('click', ()=> onRemove(idx));
+    container.appendChild(chip);
+  });
+}
+
+function xhrUpload({ url, formData, onProgress }){
+  return new Promise((resolve, reject)=>{
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.responseType = 'blob';
+    xhr.upload.addEventListener('progress', (e)=>{
+      if(e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    });
+    xhr.onload = ()=>{
+      const disposition = xhr.getResponseHeader('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : 'download';
+      if(xhr.status >= 200 && xhr.status < 300){
+        resolve({ blob: xhr.response, filename });
+      } else {
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          try{ reject(new Error(JSON.parse(reader.result).error || 'Conversion failed.')); }
+          catch{ reject(new Error('Conversion failed.')); }
+        };
+        reader.readAsText(xhr.response);
+      }
+    };
+    xhr.onerror = ()=> reject(new Error('Network error — check your connection and try again.'));
+    xhr.send(formData);
+  });
+}
+
+// ---------- PDF -> Images ----------
+let pdfFile = null;
+setupDropzone('dz1', 'fileInput1', (files)=>{
+  if(files[0]){
+    pdfFile = files[0];
+    renderFileList(document.getElementById('fileList1'), [pdfFile], ()=>{
+      pdfFile = null;
+      renderFileList(document.getElementById('fileList1'), [], ()=>{});
+      document.getElementById('btnConvert1').disabled = true;
+    });
+    document.getElementById('btnConvert1').disabled = false;
+  }
+}, false);
+
+document.getElementById('dpi1').addEventListener('input', (e)=>{ document.getElementById('dpi1Label').textContent = e.target.value; });
+document.getElementById('quality1').addEventListener('input', (e)=>{ document.getElementById('quality1Label').textContent = e.target.value + '%'; });
+document.getElementById('format1').addEventListener('change', (e)=>{
+  document.getElementById('qualityField1').style.display = e.target.value === 'png' ? 'none' : 'flex';
+});
+
+document.getElementById('btnConvert1').addEventListener('click', async ()=>{
+  if(!pdfFile) return;
+  const btn = document.getElementById('btnConvert1');
+  const progressWrap = document.getElementById('progress1');
+  const progressFill = document.getElementById('progress1Fill');
+  const progressPct = document.getElementById('progress1Pct');
+  const errorBox = document.getElementById('error1');
+  const resultBox = document.getElementById('result1');
+
+  btn.disabled = true; errorBox.classList.remove('show'); resultBox.classList.remove('show');
+  progressWrap.classList.add('show'); progressFill.style.width = '0%'; progressPct.textContent = '0%';
+
+  const fd = new FormData();
+  fd.append('file', pdfFile);
+  fd.append('format', document.getElementById('format1').value);
+  fd.append('dpi', document.getElementById('dpi1').value);
+  fd.append('quality', document.getElementById('quality1').value);
+  fd.append('pages', document.getElementById('pages1').value || 'all');
+
+  try{
+    const { blob, filename } = await xhrUpload({
+      url: '/api/convert/pdf-to-images',
+      formData: fd,
+      onProgress: (pct)=>{ progressFill.style.width = pct + '%'; progressPct.textContent = pct + '%'; }
+    });
+    const url = URL.createObjectURL(blob);
+    const dl = document.getElementById('download1');
+    dl.href = url; dl.download = filename;
+    resultBox.classList.add('show');
+  }catch(err){
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  }finally{
+    btn.disabled = false;
+    progressWrap.classList.remove('show');
+  }
+});
+
+// ---------- Images -> PDF ----------
+let imgFiles = [];
+function refreshImgFileList(){
+  renderFileList(document.getElementById('fileList2'), imgFiles, (idx)=>{
+    imgFiles.splice(idx, 1);
+    refreshImgFileList();
+  });
+  document.getElementById('btnConvert2').disabled = imgFiles.length === 0;
+}
+setupDropzone('dz2', 'fileInput2', (files)=>{
+  imgFiles = imgFiles.concat(files);
+  refreshImgFileList();
+}, true);
+
+document.getElementById('btnConvert2').addEventListener('click', async ()=>{
+  if(imgFiles.length === 0) return;
+  const btn = document.getElementById('btnConvert2');
+  const progressWrap = document.getElementById('progress2');
+  const progressFill = document.getElementById('progress2Fill');
+  const progressPct = document.getElementById('progress2Pct');
+  const errorBox = document.getElementById('error2');
+  const resultBox = document.getElementById('result2');
+
+  btn.disabled = true; errorBox.classList.remove('show'); resultBox.classList.remove('show');
+  progressWrap.classList.add('show'); progressFill.style.width = '0%'; progressPct.textContent = '0%';
+
+  const fd = new FormData();
+  imgFiles.forEach(f => fd.append('files', f));
+  fd.append('pageSize', document.getElementById('pageSize2').value);
+
+  try{
+    const { blob, filename } = await xhrUpload({
+      url: '/api/convert/images-to-pdf',
+      formData: fd,
+      onProgress: (pct)=>{ progressFill.style.width = pct + '%'; progressPct.textContent = pct + '%'; }
+    });
+    const url = URL.createObjectURL(blob);
+    const dl = document.getElementById('download2');
+    dl.href = url; dl.download = filename;
+    resultBox.classList.add('show');
+  }catch(err){
+    errorBox.textContent = err.message;
+    errorBox.classList.add('show');
+  }finally{
+    btn.disabled = false;
+    progressWrap.classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>
