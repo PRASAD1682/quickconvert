@@ -1,0 +1,27 @@
+{
+  "name": "docstudio-converter-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "archiver": "^8.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "multer": "^2.2.0",
+    "p-queue": "^9.3.3",
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.35.4"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  }
+}
